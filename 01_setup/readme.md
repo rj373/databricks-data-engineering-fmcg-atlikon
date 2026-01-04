@@ -1,7 +1,7 @@
 📂 Folder: setup/
 This folder contains the initialization scripts required to establish the data infrastructure for the Atlikon and Sports Bar unified data pipeline. These scripts must be executed before running any ETL (Bronze-to-Gold) processes.
 📄 Included Files
-1. setup_catalog.sql
+1. setup_catalog.py
 • Purpose: Initializes the Unity Catalog and defines the Medallion Architecture layers.
 • Functionality:
     ◦ Creates the fmcg catalog as the top-level container.
@@ -20,7 +20,7 @@ This folder contains the initialization scripts required to establish the data i
     ◦ Derives analytical attributes like year_quarter, month_name, and date_key.
 • Why we need it: Atlikon and Sports Bar originally had reporting cycles that "didn't align". This script creates a Unified Temporal Backbone, ensuring that when we aggregate revenue by quarter, both companies’ data is joined onto the exact same calendar.
 🚀 Execution Order
-1. setup_catalog.sql: Run first to create the physical folders and database containers in Databricks.
+1. setup_catalog.py: Run first to create the physical folders and database containers in Databricks.
 2. utilities.py: Run to initialize the variables for the session.
 3. dim_date_table_creation.py: Run to populate the Gold layer with the master date dimension.
 🎯 Business Impact
