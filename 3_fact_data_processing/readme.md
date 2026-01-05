@@ -1,45 +1,85 @@
-📊 Fact Data Processing: Orders Pipeline
-This folder contains the core transaction engine for the Atlikon and Sports Bar merger. It is designed to take high-volume daily order data and transform it into a monthly consolidated format for executive reporting.
+# 📊 Fact Data Processing
+## Orders Pipeline
 
---------------------------------------------------------------------------------
-🏗️ Architecture Overview
-The pipeline follows a Medallion Architecture to move transaction data from raw ingestion to a "Single Source of Truth".
-1. Bronze (Raw Ingestion): Ingests daily CSV files from the S3 landing zone, adding metadata columns (file_name, read_timestamp) for full auditability.
-2. Silver (Transformation): Standardizes "messy" data formats and performs high-integrity joins.
-3. Gold (Consolidation): Curates BI-ready daily records for the child company and monthly aggregates for the parent company.
+This folder contains the core transaction engine for the Atlikon and Sports Bar merger.
 
---------------------------------------------------------------------------------
-🛠️ Data Cleansing & Transformation Logic
-Both the Full and Incremental scripts apply the following business rules to resolve "data chaos":
-• Quantity Validation: Filters out records where order_qty is null.
-• Customer ID Sanitization: Uses Regular Expressions to ensure customer_id is numeric; invalid entries are defaulted to 999999 to maintain referential integrity.
-• Temporal Normalization:
-    ◦ Weekday Removal: Strips day names (e.g., "Tuesday, ") from date strings.
-    ◦ Multi-Format Parsing: Leverages coalesce and try_to_date to standardize various formats (yyyy/MM/dd, dd-MM-yyyy, MMMM dd, yyyy) into a uniform yyyy-MM-dd.
-• Key Enrichment: Joins raw orders with the Silver Product Dimension to attach the deterministic product_code (SHA-256).
+The pipeline processes high-volume daily order data and transforms it into a consolidated monthly format used for executive reporting.
 
---------------------------------------------------------------------------------
-🔄 Ingestion Strategies
-1. Full Load (full_load_fact_processing)
-• Purpose: Processes the 5-month historical backfill (July to November).
-• File Management: Once records are appended to the Bronze table, the script programmatically moves raw CSVs from the landing/ folder to the processed/ folder to prevent reprocessing.
-• Batch Merge: Performs a DeltaTable.merge into the master Gold table to ensure no duplicates exist in the historical data.
-2. Incremental Load (incremental_load_fact_processing)
-• Purpose: Handles daily December updates and ongoing transactions.
-• Staging Pattern: To optimize compute, the script creates a Staging Table containing only the newly arrived daily data.
-• Monthly Re-aggregation:
-    ◦ The script retrieves all records for the current month from the child Gold table.
-    ◦ It re-calculates the sum of sold_quantity at a Monthly Granularity (first of the month) to match the Atlikon parent schema.
-    ◦ It performs an Upsert (Merge) into the parent fact_orders table.
+---
 
---------------------------------------------------------------------------------
-⚙️ Technical Highlights
-• Delta Lake Features: Utilizes Change Data Feed (CDF) and Merge Schema options to allow the pipeline to evolve alongside the business.
-• Granularity Alignment: Resolves the conflict between Sports Bar's daily tracking and Atlikon's monthly reporting cycles.
-• Orchestration: Integrated into a scheduled Databricks Job to run nightly once the business day is concluded.
+## 🏗️ Architecture Overview
 
---------------------------------------------------------------------------------
-Analogy for GitHub Portfolio: Think of the Fact Pipeline as a Commercial Sorter at a post office.
-• Bronze is the Loading Dock, where all packages (daily CSVs) are dumped regardless of their condition.
-• Silver is the Sorting Room, where we fix torn labels (sanitizing IDs) and translate different address formats into a standard zip code (parsing dates).
-• Gold is the Master Logbook. Instead of listing every individual package, the sorter writes down the Monthly Totals (aggregation) for each department, providing the CEO with a single, reliable summary of all activity
+The pipeline follows the Medallion Architecture to move transaction data from raw ingestion to a single source of truth.
+
+### Bronze Layer (Raw Ingestion)
+
+- Ingests daily CSV files from the S3 landing zone
+- Appends ingestion metadata such as file_name and read_timestamp
+- Preserves raw data for auditing and replayability
+
+### Silver Layer (Transformation)
+
+- Standardizes inconsistent and messy data formats
+- Applies business validation rules
+- Performs high-integrity joins across dimensions
+
+### Gold Layer (Consolidation)
+
+- Produces BI-ready daily records for the child company
+- Aggregates daily data into monthly records for the parent company
+- Serves as the authoritative reporting layer
+
+---
+
+## 🛠️ Data Cleansing and Transformation Logic
+
+Both full-load and incremental scripts apply the following business rules to resolve data inconsistencies.
+
+- Filters out records where order quantity is null
+- Validates customer_id values using regular expressions
+- Replaces invalid or non-numeric customer_id values with a default value to maintain referential integrity
+- Removes weekday names from date strings
+- Parses multiple date formats into a single yyyy-MM-dd standard using coalesce and try_to_date
+- Joins order data with the Silver Product Dimension to attach the deterministic product_code
+
+---
+
+## 🔄 Ingestion Strategies
+
+### Full Load Processing
+
+- Processes five months of historical data from July through November
+- Appends cleaned records to the Bronze layer
+- Moves processed CSV files from the landing folder to the processed folder to prevent reprocessing
+- Executes a Delta Lake merge into the Gold fact table to eliminate duplicates
+
+---
+
+### Incremental Load Processing
+
+- Handles daily updates and ongoing transactions
+- Creates a staging table containing only newly arrived records
+- Retrieves all records for the current month from the child Gold table
+- Recalculates monthly aggregates using the first day of the month as the grain
+- Performs an upsert into the parent fact_orders table
+
+---
+
+## ⚙️ Technical Highlights
+
+- Utilizes Delta Lake features such as Change Data Feed and Merge Schema
+- Resolves granularity mismatches between daily and monthly reporting models
+- Integrated into a Databricks Job scheduled to run nightly after business hours
+- Designed to scale as transaction volume grows
+
+---
+
+## 🧠 Portfolio Analogy
+
+Think of the Fact Pipeline as a commercial mail sorter at a post office.
+
+- Bronze is the loading dock where all packages arrive in any condition
+- Silver is the sorting room where labels are repaired and addresses standardized
+- Gold is the master logbook where only monthly totals are recorded
+
+This approach provides leadership with a single, reliable summary of all business activity.
