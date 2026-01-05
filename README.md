@@ -78,3 +78,6 @@ Atlikon is a premium restaurant.
 Sports Bar supplies messy ingredients.
 Data Engineers clean, standardize, and organize the data.
 Analysts and AI systems turn it into insights.
+
+<img width="2660" height="1496" alt="Sports Bar to Atlikon Integration_ Project Architecture - visual selection (1)" src="https://github.com/user-attachments/assets/b9271e33-f867-4eb0-8298-a5957095fafa" />
+
